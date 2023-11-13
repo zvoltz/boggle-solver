@@ -1,9 +1,9 @@
 #!/usr/bin/env python
+import argparse
 import random
 import pickle
-import time
 from Trie import Trie, TrieNode
-
+from Solver import UniprocessorSolver, MultiprocessorSolver
 
 class Board:
     def __init__(self, length):
@@ -80,95 +80,28 @@ class Board:
                 if row[col] == 'Q':
                     row[col] = 'Qu'
 
-
-class Solver:
-
-    def __init__(self, board):
-        global trie
-        self.words = []
-        self.board = board
-        self.visitedSoFar = []
-        self.dirs = [[-1, 1], [0, 1], [1, 1], [-1, 0], [1, 0], [-1, -1], [0, -1], [1, -1]]
-        self.trie = trie
-        self.solve()
-
-    def solve(self):
-        currTime = time.perf_counter()
-        for row in range(len(self.board)):
-            for col in range(len(self.board[row])):
-                self.solveRecursive([row, col], self.board[row][col])
-        print("Solving took: ", time.perf_counter() - currTime)
-        return self.words
-
-    # go through every possible combination of letters to find all words
-    def solveRecursive(self, location, wordSoFar):
-        self.visitedSoFar.append(location)
-        self.addWord(wordSoFar)
-        if self.isLeaf(wordSoFar, location):
-            return
-        for direction in self.dirs:
-            self.goInDirection(location, direction, wordSoFar)
-        self.visitedSoFar.remove(location)
-
-    def addWord(self, word):
-        # Boggle words must be longer than 2 letters, a real word, and cannot repeat
-        if len(word) > 2 and self.trie.search(word.lower()) and word not in self.words:
-            self.words.append(word.upper())
-
-    # checks if the given path of nodes leads to a leaf, if it does, there's no more words possible,
-    # and we can stop searching, also removes the location from visitedSoFar
-    def isLeaf(self, word, location):
-        if self.trie.isLeaf(word.lower()):
-            self.visitedSoFar.remove(location)
-            return True
-        return False
-
-    def getNewLocation(self, location, direction):
-        newX = location[0] + direction[0]
-        newY = location[1] + direction[1]
-        return [newX, newY]
-
-    # checks if the new location has been visited and if the row and column are between 0 and the length of the board
-    def validRecurse(self, newLocation):
-        if newLocation in self.visitedSoFar:
-            return False
-        if len(self.board) > newLocation[0] >= 0:
-            if len(self.board[newLocation[0]]) > newLocation[1] >= 0:
-                return True
-        return False
-
-    # recurse in the given direction
-    def goInDirection(self, location, direction, wordSoFar):
-        newLocation = self.getNewLocation(location, direction)
-        if self.validRecurse(newLocation):
-            self.solveRecursive(newLocation, wordSoFar + self.board[newLocation[0]][newLocation[1]])
-
-    def getWords(self):
-        for row in self.board:
-            print(row)
-        # sort by length then alphabetically
-        self.words.sort()
-        self.words.sort(reverse=True, key=len)
-        print(f"Found {len(self.words)} words: ")
-        print(self.words)
-
-
-def play():
+def play(trie):
     board = Board(int(input("What size should the board be? The board will always be a square. ")))
-    solver = Solver(board.get2dArray())
+    if args.multi:
+        solver = MultiprocessorSolver(board.get2dArray(), trie)
+    else:
+        solver = UniprocessorSolver(board.get2dArray(), trie)
     solver.getWords()
 
 
 def createTrie():
-    global trie
     print("Loading dictionary...")
     with open('english.dictionary', 'rb') as config_dictionary_file:
         trie = pickle.load(config_dictionary_file)
     print("Loaded, starting game.")
+    return trie
 
 
 if __name__ == '__main__':
-    createTrie()
-    play()
+    parser = argparse.ArgumentParser(prog="Boggle Solver", description="Creates and solves a boggle game of nxn size")
+    parser.add_argument("-multi", action="store_true")
+    args = parser.parse_args()
+    trie = createTrie()
+    play(trie)
     while input("Do you want to play again? Y or N ").upper() == "Y":
-        play()
+        play(trie)
