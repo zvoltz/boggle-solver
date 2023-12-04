@@ -73,6 +73,10 @@ int main() {
         vector<string> curr_line;
         for(int j = 0; j < num_lines; j++) {
             cin >> new_char;
+            new_char[0] = tolower(new_char[0]);
+            if (new_char.length() > 1) {
+                new_char[1] = tolower(new_char[1]);
+            }
             curr_line.push_back(new_char);
         }
         board.push_back(curr_line);
