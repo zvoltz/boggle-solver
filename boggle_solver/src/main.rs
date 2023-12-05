@@ -93,9 +93,8 @@ fn valid_recurse(new_location: (usize, usize), visited_so_far: &Vec<(usize, usiz
     !visited_so_far.contains(&new_location)
 }
 
-fn solve_recursive(board: Vec<Vec<String>>, location: (usize, usize), word_so_far: String, root: &TrieNode) -> Vec<String> {
+fn solve_recursive(board: Vec<Vec<String>>, location: (usize, usize), word_so_far: String, root: &TrieNode, visited_so_far: &mut Vec<(usize, usize)>) -> Vec<String> {
     let mut words_found = Vec::new();
-    let visited_so_far = vec![location];
     add_word(&mut words_found, &word_so_far, root);
 
     if is_leaf(root, &word_so_far) {
@@ -106,9 +105,9 @@ fn solve_recursive(board: Vec<Vec<String>>, location: (usize, usize), word_so_fa
         let new_location = ((location.0 as i32 + direction.0) as usize, (location.1 as i32 + direction.1) as usize);
         if valid_recurse(new_location, &visited_so_far, &board) {
             let new_word_so_far = word_so_far.clone() + &board[new_location.0][new_location.1];
-            let mut new_visited = visited_so_far.clone();
-            new_visited.push(new_location);
-            let mut words_from_direction = solve_recursive(board.clone(), new_location, new_word_so_far, root);
+            visited_so_far.push(new_location);
+            let mut words_from_direction = solve_recursive(board.clone(), new_location, new_word_so_far, root, visited_so_far);
+            visited_so_far.pop();
             words_found.append(&mut words_from_direction);
         }
     }
@@ -118,7 +117,8 @@ fn solve_recursive(board: Vec<Vec<String>>, location: (usize, usize), word_so_fa
 
 fn solve_thread(letters: Vec<Vec<String>>, row: usize, col: usize, root: &TrieNode) -> Vec<String> {
     let location = (row, col);
-    solve_recursive(letters.clone(), location, letters[row][col].clone(), root)
+    let mut visited_so_far = vec![location];
+    solve_recursive(letters.clone(), location, letters[row][col].clone(), root, &mut visited_so_far)
 }
 
 fn solve(letters: Vec<Vec<String>>, root: &TrieNode) -> HashSet<String> {
