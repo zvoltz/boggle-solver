@@ -88,7 +88,7 @@ fn add_word(words: &Arc<Mutex<HashSet<String>>>, word: String) {
 
 fn valid_recurse(new_location: (usize, usize), visited_so_far: &Vec<(usize, usize)>, board: &Vec<Vec<String>>) -> bool {
     // Check if we're within the bounds of the board:
-    if new_location.0 >= board.len() || new_location.1 >= board[0].len() || new_location.0 == 0 || new_location.1 == 0 {
+    if new_location.0 >= board.len() || new_location.1 >= board[0].len() {
         return false;
     }
     // Check if we've been to this location before
